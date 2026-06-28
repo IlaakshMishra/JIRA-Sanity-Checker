@@ -1,13 +1,24 @@
+import json
 import os
 import time
 from datetime import datetime, timezone
+
+import boto3
 from jira import JIRA
+
+
+def _get_jira_token() -> str:
+    secret_arn = os.environ.get("JIRA_API_TOKEN_SECRET_ARN")
+    if secret_arn:
+        client = boto3.client("secretsmanager", region_name=os.environ.get("AWS_REGION", "us-east-1"))
+        return client.get_secret_value(SecretId=secret_arn)["SecretString"]
+    return os.environ["JIRA_API_TOKEN"]
 
 
 def get_jira_client() -> JIRA:
     return JIRA(
         server=os.environ["JIRA_URL"],
-        basic_auth=(os.environ["JIRA_EMAIL"], os.environ["JIRA_API_TOKEN"]),
+        basic_auth=(os.environ["JIRA_EMAIL"], _get_jira_token()),
     )
 
 

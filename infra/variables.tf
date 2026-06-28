@@ -1,24 +1,30 @@
 variable "aws_region" {
-  type    = string
   default = "us-east-1"
 }
 
-variable "ecr_image_uri" {
-  type        = string
-  description = "ECR container image URI (e.g. 123456789.dkr.ecr.us-east-1.amazonaws.com/jira-sanity-checker:latest)"
+variable "project" {
+  default = "jira-sanity-checker"
 }
 
 variable "jira_url" {
-  type = string
+  type        = string
+  description = "https://yourcompany.atlassian.net"
 }
 
 variable "jira_email" {
-  type = string
+  type        = string
+  description = "Atlassian account email"
 }
 
-variable "jira_api_token_secret_arn" {
+variable "jira_api_token" {
   type        = string
-  description = "ARN of Secrets Manager secret containing the Jira API token"
+  sensitive   = true
+  description = "Atlassian API token"
+}
+
+variable "jira_project_key" {
+  type    = string
+  default = "ENG"
 }
 
 variable "email_from" {
@@ -31,9 +37,16 @@ variable "email_recipients" {
   description = "Comma-separated SES recipient addresses"
 }
 
-variable "project_key" {
+variable "github_token" {
+  type        = string
+  sensitive   = true
+  default     = ""
+  description = "GitHub PAT for commit correlation (optional)"
+}
+
+variable "github_repo" {
   type    = string
-  default = "ENG"
+  default = ""
 }
 
 variable "schedule_expression" {
