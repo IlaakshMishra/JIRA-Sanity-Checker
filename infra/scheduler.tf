@@ -6,8 +6,8 @@ resource "aws_lambda_function" "app" {
   timeout       = 300
   memory_size   = 512
 
-  image_config {
-    command = ["lambda_handler.handler"]
+  tracing_config {
+    mode = "Active"
   }
 
   environment {
@@ -21,10 +21,6 @@ resource "aws_lambda_function" "app" {
       GITHUB_REPO               = var.github_repo
       AWS_REGION                = var.aws_region
     }
-  }
-
-  tracing_config {
-    mode = "Active"
   }
 }
 

@@ -77,11 +77,11 @@ resource "aws_cloudwatch_dashboard" "app" {
         type   = "metric"
         x      = 0; y = 1; width = 8; height = 6
         properties = {
-          title  = "Invocations"
-          region = var.aws_region
-          view   = "timeSeries"
-          stat   = "Sum"
-          period = 86400
+          title   = "Invocations"
+          region  = var.aws_region
+          view    = "timeSeries"
+          stat    = "Sum"
+          period  = 86400
           metrics = [["JiraSanityChecker", "invocations"]]
         }
       },
@@ -89,11 +89,11 @@ resource "aws_cloudwatch_dashboard" "app" {
         type   = "metric"
         x      = 8; y = 1; width = 8; height = 6
         properties = {
-          title  = "Errors"
-          region = var.aws_region
-          view   = "timeSeries"
-          stat   = "Sum"
-          period = 86400
+          title   = "Errors"
+          region  = var.aws_region
+          view    = "timeSeries"
+          stat    = "Sum"
+          period  = 86400
           metrics = [["JiraSanityChecker", "errors", { color = "#d62728" }]]
         }
       },
@@ -101,11 +101,11 @@ resource "aws_cloudwatch_dashboard" "app" {
         type   = "metric"
         x      = 16; y = 1; width = 8; height = 6
         properties = {
-          title  = "Emails Sent"
-          region = var.aws_region
-          view   = "timeSeries"
-          stat   = "Sum"
-          period = 86400
+          title   = "Emails Sent"
+          region  = var.aws_region
+          view    = "timeSeries"
+          stat    = "Sum"
+          period  = 86400
           metrics = [["JiraSanityChecker", "email_sent"]]
         }
       },

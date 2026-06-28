@@ -1,0 +1,17 @@
+aws_region  = "us-east-1"
+project     = "jira-sanity-checker"
+
+jira_url         = "https://yourcompany.atlassian.net"
+jira_email       = "you@company.com"
+jira_api_token   = "YOUR_ATLASSIAN_API_TOKEN"
+jira_project_key = "ENG"
+
+email_from       = "sprint-reports@company.com"
+email_recipients = "team@company.com,manager@company.com"
+
+# Optional — leave blank to disable commit correlation
+github_token = ""
+github_repo  = ""
+
+# EventBridge cron — default is 2 AM UTC daily
+schedule_expression = "cron(0 2 * * ? *)"
