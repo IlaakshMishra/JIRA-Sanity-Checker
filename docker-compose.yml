@@ -1,0 +1,11 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    env_file: .env
+    environment:
+      - PYTHONPATH=/app/src
+    command: python src/main.py ${JIRA_PROJECT_KEY:-ENG} "Current Sprint" --dry-run
+    volumes:
+      - ./src:/app/src
