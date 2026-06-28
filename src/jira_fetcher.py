@@ -31,7 +31,7 @@ def fetch_active_sprint_issues(jira: JIRA, project_key: str) -> list[dict]:
 
     all_issues: list = []
     start_at = 0
-    page_size = 100
+    page_size = 50
     max_retries = 3
 
     while True:
@@ -83,7 +83,7 @@ def _normalize(issue) -> dict:
         link for link in issue.fields.issuelinks
         if getattr(link, "type", None)
         and link.type.name.lower() == "blocks"
-        and hasattr(link, "inwardIssue")
+        and getattr(link, "inwardIssue", None) is not None
     ]
     blocking_chain_keys = [link.inwardIssue.key for link in blocker_links]
 

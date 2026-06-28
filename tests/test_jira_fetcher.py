@@ -1,8 +1,7 @@
 import json
 import os
-import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -167,3 +166,60 @@ def _make_mock_issue(
 
     os.environ.setdefault("JIRA_URL", "https://test.atlassian.net")
     return issue
+
+
+def test_fetch_active_sprint_issues_paginates():
+    from unittest.mock import patch, call
+    from jira_fetcher import fetch_active_sprint_issues
+
+    import os
+    os.environ.setdefault("JIRA_URL", "https://test.atlassian.net")
+
+    page1 = [_make_mock_issue(f"TEST-{i}", "To Do", 0, 0, 999) for i in range(50)]
+    page2 = [_make_mock_issue(f"TEST-{i}", "To Do", 0, 0, 999) for i in range(50, 60)]
+
+    mock_jira = MagicMock()
+    mock_jira.search_issues.side_effect = [page1, page2]
+
+    issues = fetch_active_sprint_issues(mock_jira, "ENG")
+
+    assert len(issues) == 60
+    assert mock_jira.search_issues.call_count == 2
+    first_call = mock_jira.search_issues.call_args_list[0]
+    assert first_call.kwargs.get("startAt", first_call.args[1] if len(first_call.args) > 1 else 0) == 0
+    second_call = mock_jira.search_issues.call_args_list[1]
+    assert second_call.kwargs.get("startAt", 0) == 50 or second_call.kwargs.get("maxResults") == 50
+
+
+def test_fetch_active_sprint_issues_retry_on_error():
+    from unittest.mock import patch
+    from jira_fetcher import fetch_active_sprint_issues
+    import os
+
+    os.environ.setdefault("JIRA_URL", "https://test.atlassian.net")
+
+    page = [_make_mock_issue("TEST-1", "To Do", 0, 0, 999)]
+    mock_jira = MagicMock()
+    mock_jira.search_issues.side_effect = [Exception("rate limit"), page]
+
+    with patch("jira_fetcher.time.sleep"):
+        issues = fetch_active_sprint_issues(mock_jira, "ENG")
+
+    assert len(issues) == 1
+
+
+def test_get_jira_client_uses_env_vars(monkeypatch):
+    from unittest.mock import patch as mpatch
+    from jira_fetcher import get_jira_client
+
+    monkeypatch.setenv("JIRA_URL", "https://myco.atlassian.net")
+    monkeypatch.setenv("JIRA_EMAIL", "user@myco.com")
+    monkeypatch.setenv("JIRA_API_TOKEN", "mytoken")
+
+    with mpatch("jira_fetcher.JIRA") as mock_jira_cls:
+        mock_jira_cls.return_value = MagicMock()
+        client = get_jira_client()
+        mock_jira_cls.assert_called_once_with(
+            server="https://myco.atlassian.net",
+            basic_auth=("user@myco.com", "mytoken"),
+        )
