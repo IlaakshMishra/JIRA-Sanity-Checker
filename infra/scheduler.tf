@@ -3,6 +3,7 @@ resource "aws_lambda_function" "app" {
   role          = aws_iam_role.lambda_role.arn
   package_type  = "Image"
   image_uri     = "${aws_ecr_repository.app.repository_url}:latest"
+  architectures = ["arm64"]
   timeout       = 300
   memory_size   = 512
 
@@ -16,10 +17,13 @@ resource "aws_lambda_function" "app" {
       JIRA_EMAIL                = var.jira_email
       JIRA_API_TOKEN_SECRET_ARN = aws_secretsmanager_secret.jira_api_token.arn
       JIRA_PROJECT_KEY          = var.jira_project_key
+      JIRA_IGNORE_LABEL         = var.jira_ignore_label
+      JIRA_STALENESS_THRESHOLD_DAYS = var.jira_staleness_threshold_days
+      JIRA_STORY_POINTS_FIELD   = var.jira_story_points_field
       EMAIL_FROM                = var.email_from
       EMAIL_RECIPIENTS          = var.email_recipients
       GITHUB_REPO               = var.github_repo
-      AWS_REGION                = var.aws_region
+      GITHUB_TOKEN_SECRET_ARN   = aws_secretsmanager_secret.github_token.arn
     }
   }
 }

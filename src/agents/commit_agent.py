@@ -2,8 +2,17 @@ import os
 import requests
 
 
+def _get_github_token() -> str | None:
+    secret_arn = os.environ.get("GITHUB_TOKEN_SECRET_ARN")
+    if secret_arn:
+        import boto3
+        client = boto3.client("secretsmanager", region_name=os.environ.get("AWS_REGION", "us-east-1"))
+        return client.get_secret_value(SecretId=secret_arn)["SecretString"]
+    return os.environ.get("GITHUB_TOKEN")
+
+
 def run(issues: list[dict]) -> list[dict]:
-    token = os.environ.get("GITHUB_TOKEN")
+    token = _get_github_token()
     repo = os.environ.get("GITHUB_REPO")
     if not token or not repo:
         return []

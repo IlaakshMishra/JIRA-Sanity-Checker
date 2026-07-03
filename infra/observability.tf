@@ -69,13 +69,19 @@ resource "aws_cloudwatch_dashboard" "app" {
   dashboard_body = jsonencode({
     widgets = [
       {
-        type   = "text"
-        x      = 0; y = 0; width = 24; height = 1
+        type       = "text"
+        x          = 0
+        y          = 0
+        width      = 24
+        height     = 1
         properties = { markdown = "# Jira Sanity Checker — Observability" }
       },
       {
         type   = "metric"
-        x      = 0; y = 1; width = 8; height = 6
+        x      = 0
+        y      = 1
+        width  = 8
+        height = 6
         properties = {
           title   = "Invocations"
           region  = var.aws_region
@@ -87,7 +93,10 @@ resource "aws_cloudwatch_dashboard" "app" {
       },
       {
         type   = "metric"
-        x      = 8; y = 1; width = 8; height = 6
+        x      = 8
+        y      = 1
+        width  = 8
+        height = 6
         properties = {
           title   = "Errors"
           region  = var.aws_region
@@ -99,7 +108,10 @@ resource "aws_cloudwatch_dashboard" "app" {
       },
       {
         type   = "metric"
-        x      = 16; y = 1; width = 8; height = 6
+        x      = 16
+        y      = 1
+        width  = 8
+        height = 6
         properties = {
           title   = "Emails Sent"
           region  = var.aws_region
@@ -111,7 +123,10 @@ resource "aws_cloudwatch_dashboard" "app" {
       },
       {
         type   = "log"
-        x      = 0; y = 7; width = 24; height = 6
+        x      = 0
+        y      = 7
+        width  = 24
+        height = 6
         properties = {
           title  = "Recent Logs"
           region = var.aws_region
@@ -121,7 +136,10 @@ resource "aws_cloudwatch_dashboard" "app" {
       },
       {
         type   = "alarm"
-        x      = 0; y = 13; width = 24; height = 3
+        x      = 0
+        y      = 13
+        width  = 24
+        height = 3
         properties = {
           title  = "Alarms"
           alarms = [aws_cloudwatch_metric_alarm.errors.arn]

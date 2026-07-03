@@ -18,6 +18,9 @@ def run(project_key: str, sprint_name: str, dry_run: bool = False) -> list[dict]
     jira = get_jira_client()
     issues = fetch_active_sprint_issues(jira, project_key)
 
+    ignore_label = os.environ.get("JIRA_IGNORE_LABEL", "sanity-ignore")
+    issues = [i for i in issues if ignore_label not in i["labels"]]
+
     all_findings = (
         staleness_agent.run(issues)
         + estimation_agent.run(issues)

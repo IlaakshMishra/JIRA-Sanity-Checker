@@ -4,8 +4,12 @@ services:
   app:
     build: .
     env_file: .env
-    environment:
-      - PYTHONPATH=/app/src
-    command: python src/main.py ${JIRA_PROJECT_KEY:-ENG} "Current Sprint" --dry-run
+    # The base image is public.ecr.aws/lambda/python:3.12, whose ENTRYPOINT
+    # starts the Lambda Runtime Interface Client. For local interactive
+    # runs we override the entrypoint to invoke main.py directly instead.
+    # Files are copied flat into ${LAMBDA_TASK_ROOT} (/var/task) by the
+    # Dockerfile, so main.py (not src/main.py) is the entry script.
+    entrypoint: python
+    command: main.py ${JIRA_PROJECT_KEY:-ENG} "Current Sprint" --dry-run
     volumes:
-      - ./src:/app/src
+      - ./src:/var/task

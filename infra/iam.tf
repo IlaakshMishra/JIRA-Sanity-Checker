@@ -32,9 +32,12 @@ resource "aws_iam_role_policy" "lambda_policy" {
         ]
       },
       {
-        Effect   = "Allow"
-        Action   = ["bedrock:InvokeModel"]
-        Resource = "arn:aws:bedrock:*::foundation-model/*"
+        Effect = "Allow"
+        Action = ["bedrock:InvokeModel"]
+        Resource = [
+          "arn:aws:bedrock:*::foundation-model/*",
+          "arn:aws:bedrock:*:${data.aws_caller_identity.current.account_id}:inference-profile/*",
+        ]
       },
       {
         Effect   = "Allow"

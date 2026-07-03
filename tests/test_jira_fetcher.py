@@ -168,27 +168,23 @@ def _make_mock_issue(
     return issue
 
 
-def test_fetch_active_sprint_issues_paginates():
-    from unittest.mock import patch, call
+def test_fetch_active_sprint_issues_fetches_all():
     from jira_fetcher import fetch_active_sprint_issues
 
     import os
     os.environ.setdefault("JIRA_URL", "https://test.atlassian.net")
 
-    page1 = [_make_mock_issue(f"TEST-{i}", "To Do", 0, 0, 999) for i in range(50)]
-    page2 = [_make_mock_issue(f"TEST-{i}", "To Do", 0, 0, 999) for i in range(50, 60)]
+    all_pages = [_make_mock_issue(f"TEST-{i}", "To Do", 0, 0, 999) for i in range(60)]
 
     mock_jira = MagicMock()
-    mock_jira.search_issues.side_effect = [page1, page2]
+    mock_jira.enhanced_search_issues.return_value = all_pages
 
     issues = fetch_active_sprint_issues(mock_jira, "ENG")
 
     assert len(issues) == 60
-    assert mock_jira.search_issues.call_count == 2
-    first_call = mock_jira.search_issues.call_args_list[0]
-    assert first_call.kwargs.get("startAt", first_call.args[1] if len(first_call.args) > 1 else 0) == 0
-    second_call = mock_jira.search_issues.call_args_list[1]
-    assert second_call.kwargs.get("startAt", 0) == 50 or second_call.kwargs.get("maxResults") == 50
+    assert mock_jira.enhanced_search_issues.call_count == 1
+    call_kwargs = mock_jira.enhanced_search_issues.call_args.kwargs
+    assert call_kwargs.get("maxResults") is False
 
 
 def test_fetch_active_sprint_issues_retry_on_error():
@@ -200,7 +196,7 @@ def test_fetch_active_sprint_issues_retry_on_error():
 
     page = [_make_mock_issue("TEST-1", "To Do", 0, 0, 999)]
     mock_jira = MagicMock()
-    mock_jira.search_issues.side_effect = [Exception("rate limit"), page]
+    mock_jira.enhanced_search_issues.side_effect = [Exception("rate limit"), page]
 
     with patch("jira_fetcher.time.sleep"):
         issues = fetch_active_sprint_issues(mock_jira, "ENG")

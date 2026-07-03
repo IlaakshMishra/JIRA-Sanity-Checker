@@ -40,34 +40,21 @@ def fetch_active_sprint_issues(jira: JIRA, project_key: str) -> list[dict]:
         "comment,duedate,parent,subtasks"
     )
 
-    all_issues: list = []
-    start_at = 0
-    page_size = 50
     max_retries = 3
 
-    while True:
-        for attempt in range(1, max_retries + 1):
-            try:
-                page = jira.search_issues(
-                    jql,
-                    startAt=start_at,
-                    maxResults=page_size,
-                    expand="changelog",
-                    fields=fields,
-                )
-                break
-            except Exception:
-                if attempt == max_retries:
-                    raise
-                time.sleep(2 ** attempt)  # exponential back-off: 2s, 4s
-
-        all_issues.extend(page)
-
-        if len(page) < page_size:
-            # Received fewer results than the page size — we've hit the end.
+    for attempt in range(1, max_retries + 1):
+        try:
+            all_issues = jira.enhanced_search_issues(
+                jql,
+                maxResults=False,
+                expand="changelog",
+                fields=fields,
+            )
             break
-
-        start_at += len(page)
+        except Exception:
+            if attempt == max_retries:
+                raise
+            time.sleep(2 ** attempt)  # exponential back-off: 2s, 4s
 
     return [_normalize(issue) for issue in all_issues]
 

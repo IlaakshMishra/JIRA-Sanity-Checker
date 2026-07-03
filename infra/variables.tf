@@ -27,6 +27,24 @@ variable "jira_project_key" {
   default = "ENG"
 }
 
+variable "jira_ignore_label" {
+  type        = string
+  default     = "sanity-ignore"
+  description = "Label that excludes a ticket from all agent checks"
+}
+
+variable "jira_staleness_threshold_days" {
+  type        = number
+  default     = 3
+  description = "Days since update/comment before an in-progress ticket is flagged stale"
+}
+
+variable "jira_story_points_field" {
+  type        = string
+  default     = "customfield_10016"
+  description = "Custom field ID for story points (varies by Jira instance)"
+}
+
 variable "email_from" {
   type        = string
   description = "Verified SES sender address"
