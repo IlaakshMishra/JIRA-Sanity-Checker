@@ -71,3 +71,9 @@ variable "schedule_expression" {
   type    = string
   default = "cron(0 2 * * ? *)"
 }
+
+variable "ppt_schedule_expression" {
+  type        = string
+  default     = "cron(0 17 ? * FRI *)"
+  description = "EventBridge cron for weekly sprint summary PPT — default Friday 5PM UTC"
+}

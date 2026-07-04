@@ -52,3 +52,29 @@ resource "aws_lambda_permission" "allow_eventbridge" {
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.nightly.arn
 }
+
+resource "aws_cloudwatch_event_rule" "ppt_weekly" {
+  name                = "${var.project}-ppt-weekly"
+  description         = "Jira Sanity Checker — weekly sprint summary PPT"
+  schedule_expression = var.ppt_schedule_expression
+}
+
+resource "aws_cloudwatch_event_target" "lambda_ppt" {
+  rule      = aws_cloudwatch_event_rule.ppt_weekly.name
+  target_id = "JiraSanityCheckerPPTLambda"
+  arn       = aws_lambda_function.app.arn
+
+  input = jsonencode({
+    mode        = "ppt"
+    project_key = var.jira_project_key
+    sprint_name = "Current Sprint"
+  })
+}
+
+resource "aws_lambda_permission" "allow_eventbridge_ppt" {
+  statement_id  = "AllowEventBridgeInvokePPT"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.app.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.ppt_weekly.arn
+}

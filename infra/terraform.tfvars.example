@@ -15,3 +15,6 @@ github_repo  = ""
 
 # EventBridge cron — default is 2 AM UTC daily
 schedule_expression = "cron(0 2 * * ? *)"
+
+# EventBridge cron for weekly PPT summary — default Friday 5PM UTC
+ppt_schedule_expression = "cron(0 17 ? * FRI *)"
