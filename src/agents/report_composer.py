@@ -3,7 +3,7 @@ import os
 
 import boto3
 
-MODEL_ID = "us.anthropic.claude-sonnet-4-5"
+MODEL_ID = "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
 
 SYSTEM = """You are a senior engineering project manager.
 You receive structured findings from sprint health agents.
@@ -18,7 +18,7 @@ def compose(all_findings: list[dict], sprint_name: str) -> str:
     client = boto3.client("bedrock-runtime", region_name=region)
 
     payload = {
-        "model": MODEL_ID,
+        "anthropic_version": "bedrock-2023-05-31",
         "max_tokens": 1000,
         "system": SYSTEM,
         "messages": [{

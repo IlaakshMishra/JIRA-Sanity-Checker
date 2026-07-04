@@ -6,7 +6,7 @@ import boto3
 
 logger = logging.getLogger(__name__)
 
-MODEL_ID = "us.anthropic.claude-sonnet-4-5"
+MODEL_ID = "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
 
 SYSTEM = """You are a senior engineering project manager.
 You receive sprint statistics and raw ticket data.
@@ -22,7 +22,7 @@ def generate(stats: dict, issues: list[dict]) -> dict:
     client = boto3.client("bedrock-runtime", region_name=region)
 
     payload = {
-        "model": MODEL_ID,
+        "anthropic_version": "bedrock-2023-05-31",
         "max_tokens": 800,
         "system": SYSTEM,
         "messages": [{
@@ -42,8 +42,12 @@ def generate(stats: dict, issues: list[dict]) -> dict:
             accept="application/json",
         )
         body = json.loads(resp["body"].read())
-        text = body["content"][0]["text"]
-        narrative = json.loads(text)
+        text = body["content"][0]["text"].strip()
+        if text.startswith("```"):
+            text = text.strip("`")
+            if text.startswith("json"):
+                text = text[4:]
+        narrative = json.loads(text.strip())
     except (json.JSONDecodeError, KeyError, IndexError, TypeError):
         logger.warning("Parse failure in generate(); falling back to empty narrative")
         return dict(_EMPTY)

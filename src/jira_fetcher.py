@@ -37,7 +37,7 @@ def fetch_active_sprint_issues(jira: JIRA, project_key: str) -> list[dict]:
     fields = (
         f"summary,status,priority,assignee,{field},labels,"
         "issuetype,timeoriginalestimate,timespent,issuelinks,"
-        "comment,duedate,parent,subtasks"
+        "comment,duedate,parent,subtasks,updated"
     )
 
     max_retries = 3
