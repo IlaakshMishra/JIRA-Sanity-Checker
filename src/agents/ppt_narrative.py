@@ -36,19 +36,25 @@ def generate(stats: dict, issues: list[dict]) -> dict:
         contentType="application/json",
         accept="application/json",
     )
-    body = json.loads(resp["body"].read())
-    text = body["content"][0]["text"]
 
     try:
+        body = json.loads(resp["body"].read())
+        text = body["content"][0]["text"]
         narrative = json.loads(text)
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, KeyError, IndexError, TypeError):
         return dict(_EMPTY)
 
     if not isinstance(narrative, dict):
         return dict(_EMPTY)
 
+    def _extract_list(value):
+        """Extract a list from a value, defaulting to empty list if not a list."""
+        if isinstance(value, list):
+            return value
+        return []
+
     return {
-        "highlights": list(narrative.get("highlights") or [])[:5],
-        "risks": list(narrative.get("risks") or [])[:5],
-        "next_steps": list(narrative.get("next_steps") or [])[:5],
+        "highlights": _extract_list(narrative.get("highlights"))[:5],
+        "risks": _extract_list(narrative.get("risks"))[:5],
+        "next_steps": _extract_list(narrative.get("next_steps"))[:5],
     }
