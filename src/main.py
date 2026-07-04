@@ -5,9 +5,11 @@ from dotenv import load_dotenv
 
 from jira_fetcher import get_jira_client, fetch_active_sprint_issues
 from agents import staleness_agent, estimation_agent, priority_agent, blocker_agent
+from agents import sprint_summary_agent, ppt_narrative
 from agents.commit_agent import run as commit_run
 from agents.report_composer import compose
-from notifier import send_email_report
+from notifier import send_email_report, send_ppt_email
+from ppt_generator import build as build_ppt
 
 load_dotenv()
 
@@ -42,9 +44,26 @@ def run(project_key: str, sprint_name: str, dry_run: bool = False) -> list[dict]
     return all_findings
 
 
+def run_ppt(project_key: str, sprint_name: str, dry_run: bool = False) -> bytes:
+    jira = get_jira_client()
+    issues = fetch_active_sprint_issues(jira, project_key)
+
+    ignore_label = os.environ.get("JIRA_IGNORE_LABEL", "sanity-ignore")
+    issues = [i for i in issues if ignore_label not in i["labels"]]
+
+    stats = sprint_summary_agent.summarize(issues)
+    narrative = ppt_narrative.generate(stats, issues)
+    pptx_bytes = build_ppt(sprint_name, stats, narrative)
+
+    if not dry_run:
+        send_ppt_email(pptx_bytes, sprint_name)
+
+    return pptx_bytes
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python src/main.py <project_key> [sprint_name] [--dry-run]")
+        print("Usage: python src/main.py <project_key> [sprint_name] [--ppt] [--dry-run]")
         sys.exit(1)
     project_key = sys.argv[1]
     sprint_name = next(
@@ -52,4 +71,7 @@ if __name__ == "__main__":
         "Current Sprint",
     )
     dry_run = "--dry-run" in sys.argv
-    run(project_key, sprint_name, dry_run=dry_run)
+    if "--ppt" in sys.argv:
+        run_ppt(project_key, sprint_name, dry_run=dry_run)
+    else:
+        run(project_key, sprint_name, dry_run=dry_run)
