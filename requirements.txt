@@ -5,3 +5,4 @@ requests==2.32.0
 pytest==8.3.0
 weasyprint==62.3
 markdown==3.6
+python-pptx==1.0.2
