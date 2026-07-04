@@ -1,7 +1,10 @@
 import json
+import logging
 import os
 
 import boto3
+
+logger = logging.getLogger(__name__)
 
 MODEL_ID = "us.anthropic.claude-sonnet-4-5"
 
@@ -30,18 +33,22 @@ def generate(stats: dict, issues: list[dict]) -> dict:
             ),
         }],
     }
-    resp = client.invoke_model(
-        modelId=MODEL_ID,
-        body=json.dumps(payload),
-        contentType="application/json",
-        accept="application/json",
-    )
 
     try:
+        resp = client.invoke_model(
+            modelId=MODEL_ID,
+            body=json.dumps(payload),
+            contentType="application/json",
+            accept="application/json",
+        )
         body = json.loads(resp["body"].read())
         text = body["content"][0]["text"]
         narrative = json.loads(text)
     except (json.JSONDecodeError, KeyError, IndexError, TypeError):
+        logger.warning("Parse failure in generate(); falling back to empty narrative")
+        return dict(_EMPTY)
+    except Exception as e:
+        logger.warning(f"Bedrock invoke_model failure in generate(); falling back to empty narrative: {e}")
         return dict(_EMPTY)
 
     if not isinstance(narrative, dict):

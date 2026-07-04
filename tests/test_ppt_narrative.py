@@ -132,3 +132,17 @@ def test_generate_falls_back_on_missing_content_key(mock_boto3):
     result = generate({"total_issues": 1}, [])
 
     assert result == {"highlights": [], "risks": [], "next_steps": []}
+
+
+@patch("agents.ppt_narrative.boto3")
+def test_generate_falls_back_on_invoke_model_exception(mock_boto3):
+    """When invoke_model raises an exception (throttle, network, etc), return empty fallback instead of propagating."""
+    from agents.ppt_narrative import generate
+
+    mock_client = MagicMock()
+    mock_client.invoke_model.side_effect = Exception("throttled")
+    mock_boto3.client.return_value = mock_client
+
+    result = generate({"total_issues": 1}, [])
+
+    assert result == {"highlights": [], "risks": [], "next_steps": []}
