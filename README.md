@@ -1,33 +1,46 @@
 # Jira Sanity Checker
 
-Nightly sprint hygiene tool. Fetches active Jira sprint, runs 5 analysis agents in-process, composes a Markdown report via AWS Bedrock, and delivers it as a PDF email via AWS SES — automatically, every night at 2 AM UTC.
+Sprint hygiene tool. One Lambda, two scheduled jobs sharing the same Jira fetch: a **nightly sanity report** (5 analysis agents → Bedrock-composed Markdown → PDF email) and a **weekly PPT summary** (stats + Bedrock narrative → slide deck email). Both deliver via AWS SES, fully automated.
 
-No dashboards. No manual standup prep. Just an email.
+No dashboards. No manual standup prep. Just email.
 
 ---
 
 ## How It Works
 
-```
-EventBridge (2 AM UTC)
-        │
-        ▼
-   Lambda (single container)
-        │
-        ├── jira_fetcher.py   ← fetches active sprint issues from Jira API
-        │
-        ├── StalenessAgent    ← stale in-progress, unassigned, no recent comments
-        ├── EstimationAgent   ← missing story points, overrun, subtask gaps
-        ├── PriorityAgent     ← unassigned P1s, no due date, label mismatches
-        ├── BlockerAgent      ← stale blockers, deep block chains, no escalation
-        ├── CommitAgent       ← PRs merged without ticket, no commits on in-progress
-        │
-        ├── ReportComposer    ← single Bedrock call (claude-sonnet-4-5) → Markdown
-        │
-        └── notifier.py       ← SES: plain text + HTML + PDF attachment
+```mermaid
+flowchart TD
+    EB1["EventBridge — nightly cron"] -->|"mode: sanity (default)"| L
+    EB2["EventBridge — weekly cron"] -->|"mode: ppt"| L
+    L["Lambda (single container)\nlambda_handler.py dispatches on event mode"]
+
+    L --> F["jira_fetcher.py\nfetch active sprint issues from Jira API"]
+
+    F --> SANITY & PPT
+
+    subgraph SANITY["sanity report (main.run)"]
+        direction TB
+        A1["StalenessAgent — stale in-progress, unassigned, no recent comments"]
+        A2["EstimationAgent — missing points, overrun, subtask gaps"]
+        A3["PriorityAgent — unassigned P1s, no due date, label mismatches"]
+        A4["BlockerAgent — stale blockers, deep block chains, no escalation"]
+        A5["CommitAgent — PRs merged without ticket, no commits on in-progress (optional, needs GITHUB_TOKEN)"]
+        A1 & A2 & A3 & A4 & A5 --> RC["ReportComposer\nBedrock call -> Markdown"]
+        RC --> PDF["pdf_generator.py\nMarkdown -> HTML -> PDF"]
+    end
+
+    subgraph PPT["PPT summary (main.run_ppt)"]
+        direction TB
+        S1["sprint_summary_agent\npoints, status counts, carryover, blocked (no Bedrock)"]
+        S1 --> S2["ppt_narrative\nBedrock call -> highlights/risks/next_steps JSON"]
+        S2 --> S3["ppt_generator.py\nbuilds .pptx"]
+    end
+
+    PDF --> N1["notifier.send_email_report\nSES: plain text + HTML + PDF attachment"]
+    S3 --> N2["notifier.send_ppt_email\nSES: .pptx attachment"]
 ```
 
-Every agent is a pure Python function: `run(issues: list[dict]) -> list[dict]`. No network calls except the Commit agent (GitHub API, optional). All agents run in the same process — no Lambda fan-out, no queues.
+Every sanity agent is a pure Python function: `run(issues: list[dict]) -> list[dict]`. No network calls except the Commit agent (GitHub API, optional). Everything runs in the same Lambda invocation — no fan-out, no queues. Delivery is unconditional (no human approval gate); `dry_run=True` skips the SES send when run locally via `main.py`.
 
 ---
 
