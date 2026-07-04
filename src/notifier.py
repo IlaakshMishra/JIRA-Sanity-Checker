@@ -42,3 +42,35 @@ def send_email_report(report_md: str, sprint_name: str) -> None:
         Destinations=recipients,
         RawMessage={"Data": msg.as_bytes()},
     )
+
+
+def send_ppt_email(pptx_bytes: bytes, sprint_name: str) -> None:
+    sender = os.environ.get("EMAIL_FROM")
+    recipients_raw = os.environ.get("EMAIL_RECIPIENTS")
+    if not sender or not recipients_raw:
+        return
+
+    recipients = [r.strip() for r in recipients_raw.split(",") if r.strip()]
+    region = os.environ.get("AWS_REGION", "us-east-1")
+    safe_name = sprint_name.replace(" ", "-").replace("/", "-")
+    filename = f"{safe_name}-summary.pptx"
+
+    msg = MIMEMultipart("mixed")
+    msg["Subject"] = f"Sprint Summary: {sprint_name}"
+    msg["From"] = sender
+    msg["To"] = ", ".join(recipients)
+    msg.attach(MIMEText(f"Sprint summary deck for {sprint_name} attached.", "plain"))
+
+    attachment = MIMEApplication(
+        pptx_bytes,
+        _subtype="vnd.openxmlformats-officedocument.presentationml.presentation",
+    )
+    attachment.add_header("Content-Disposition", "attachment", filename=filename)
+    msg.attach(attachment)
+
+    client = boto3.client("ses", region_name=region)
+    client.send_raw_email(
+        Source=sender,
+        Destinations=recipients,
+        RawMessage={"Data": msg.as_bytes()},
+    )
