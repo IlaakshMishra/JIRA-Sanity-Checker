@@ -17,7 +17,7 @@ resource "aws_iam_role_policy" "lambda_policy" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
+    Statement = concat([
       {
         Effect   = "Allow"
         Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
@@ -63,6 +63,20 @@ resource "aws_iam_role_policy" "lambda_policy" {
         Action   = ["xray:PutTraceSegments", "xray:PutTelemetryRecords"]
         Resource = "*"
       }
-    ]
+      ],
+      # No-op until agentcore_runtime_arns is populated (see bootstrap order
+      # in the AgentCore migration plan) — avoids an empty Resource list.
+      length(var.agentcore_runtime_arns) > 0 ? [{
+        Effect = "Allow"
+        Action = ["bedrock-agentcore:InvokeAgentRuntime"]
+        # InvokeAgentRuntime checks authorization against both the bare
+        # runtime ARN and its runtime-endpoint sub-resource
+        # (.../runtime-endpoint/DEFAULT) — both forms are required.
+        Resource = concat(
+          values(var.agentcore_runtime_arns),
+          [for arn in values(var.agentcore_runtime_arns) : "${arn}/*"],
+        )
+      }] : []
+    )
   })
 }

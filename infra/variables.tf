@@ -77,3 +77,15 @@ variable "ppt_schedule_expression" {
   default     = "cron(0 17 ? * FRI *)"
   description = "EventBridge cron for weekly sprint summary PPT — default Friday 5PM UTC"
 }
+
+variable "agent_backend" {
+  type        = string
+  default     = "local"
+  description = "\"local\" runs the 6 agents in-process (default); \"agentcore\" routes them through AWS Bedrock AgentCore Runtime"
+}
+
+variable "agentcore_runtime_arns" {
+  type        = map(string)
+  default     = {}
+  description = "AgentCore Runtime ARNs keyed by agent name (staleness/estimation/priority/blocker/commit/report_composer) — populate after running scripts/deploy_agentcore_agents.py"
+}

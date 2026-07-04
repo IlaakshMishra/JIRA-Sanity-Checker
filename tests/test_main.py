@@ -64,3 +64,28 @@ def test_ignore_label_excludes_issue_from_all_agents(
     seen_keys = {i["key"] for i in mock_staleness.run.call_args[0][0]}
     assert seen_keys == {"ENG-1"}
     assert {i["key"] for i in mock_commit_run.call_args[0][0]} == {"ENG-1"}
+
+
+@patch("main.send_email_report")
+@patch("main.fetch_active_sprint_issues")
+@patch("main.get_jira_client")
+def test_agent_backend_agentcore_routes_through_agentcore_agents(
+    mock_get_client, mock_fetch, mock_send_email, monkeypatch
+):
+    monkeypatch.setenv("AGENT_BACKEND", "agentcore")
+    mock_fetch.return_value = [_issue("ENG-1", labels=[])]
+
+    with patch("agentcore_agents.staleness_run", return_value=[]) as mock_staleness, \
+         patch("agentcore_agents.estimation_run", return_value=[]), \
+         patch("agentcore_agents.priority_run", return_value=[]), \
+         patch("agentcore_agents.blocker_run", return_value=[]), \
+         patch(
+             "agentcore_agents.commit_run",
+             return_value=[{"agent": "commit", "key": "ENG-1", "severity": "LOW", "reason": "x", "url": "u"}],
+         ), \
+         patch("agentcore_agents.report_composer_compose", return_value="agentcore report") as mock_compose:
+        result = main.run("ENG", "Sprint 42", dry_run=True)
+
+    assert result == [{"agent": "commit", "key": "ENG-1", "severity": "LOW", "reason": "x", "url": "u"}]
+    mock_staleness.assert_called_once()
+    mock_compose.assert_called_once_with(result, "Sprint 42")

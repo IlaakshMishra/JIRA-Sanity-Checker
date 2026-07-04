@@ -24,6 +24,14 @@ resource "aws_lambda_function" "app" {
       EMAIL_RECIPIENTS          = var.email_recipients
       GITHUB_REPO               = var.github_repo
       GITHUB_TOKEN_SECRET_ARN   = aws_secretsmanager_secret.github_token.arn
+
+      AGENT_BACKEND                 = var.agent_backend
+      AGENTCORE_STALENESS_ARN       = lookup(var.agentcore_runtime_arns, "staleness", "")
+      AGENTCORE_ESTIMATION_ARN      = lookup(var.agentcore_runtime_arns, "estimation", "")
+      AGENTCORE_PRIORITY_ARN        = lookup(var.agentcore_runtime_arns, "priority", "")
+      AGENTCORE_BLOCKER_ARN         = lookup(var.agentcore_runtime_arns, "blocker", "")
+      AGENTCORE_COMMIT_ARN          = lookup(var.agentcore_runtime_arns, "commit", "")
+      AGENTCORE_REPORT_COMPOSER_ARN = lookup(var.agentcore_runtime_arns, "report_composer", "")
     }
   }
 }

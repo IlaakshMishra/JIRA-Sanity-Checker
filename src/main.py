@@ -23,19 +23,31 @@ def run(project_key: str, sprint_name: str, dry_run: bool = False) -> list[dict]
     ignore_label = os.environ.get("JIRA_IGNORE_LABEL", "sanity-ignore")
     issues = [i for i in issues if ignore_label not in i["labels"]]
 
+    if os.environ.get("AGENT_BACKEND", "local") == "agentcore":
+        import agentcore_agents as backend
+        run_staleness, run_estimation = backend.staleness_run, backend.estimation_run
+        run_priority, run_blocker = backend.priority_run, backend.blocker_run
+        run_commit = backend.commit_run
+        compose_report = backend.report_composer_compose
+    else:
+        run_staleness, run_estimation = staleness_agent.run, estimation_agent.run
+        run_priority, run_blocker = priority_agent.run, blocker_agent.run
+        run_commit = commit_run
+        compose_report = lambda findings, name: compose(findings, sprint_name=name)
+
     all_findings = (
-        staleness_agent.run(issues)
-        + estimation_agent.run(issues)
-        + priority_agent.run(issues)
-        + blocker_agent.run(issues)
-        + commit_run(issues)
+        run_staleness(issues)
+        + run_estimation(issues)
+        + run_priority(issues)
+        + run_blocker(issues)
+        + run_commit(issues)
     )
 
     if not all_findings:
         print("Sprint looks clean. Nothing to flag.")
         return []
 
-    report = compose(all_findings, sprint_name=sprint_name)
+    report = compose_report(all_findings, sprint_name)
     print(report)
 
     if not dry_run:
