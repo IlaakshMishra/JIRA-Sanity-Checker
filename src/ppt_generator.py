@@ -64,15 +64,21 @@ def _add_status_breakdown_slide(prs: Presentation, stats: dict) -> None:
     slide = prs.slides.add_slide(layout)
     slide.shapes.title.text = "Status Breakdown"
 
-    chart_data = CategoryChartData()
-    chart_data.categories = list(stats["status_counts"].keys())
-    chart_data.add_series("Issues", list(stats["status_counts"].values()))
+    if not stats["status_counts"]:
+        # If no status data, add a text placeholder instead of crashing
+        textbox = slide.shapes.add_textbox(Inches(1), Inches(2), Inches(8), Inches(3))
+        text_frame = textbox.text_frame
+        text_frame.text = "No status data available."
+    else:
+        chart_data = CategoryChartData()
+        chart_data.categories = list(stats["status_counts"].keys())
+        chart_data.add_series("Issues", list(stats["status_counts"].values()))
 
-    slide.shapes.add_chart(
-        XL_CHART_TYPE.COLUMN_CLUSTERED,
-        Inches(1), Inches(1.5), Inches(8), Inches(5),
-        chart_data,
-    )
+        slide.shapes.add_chart(
+            XL_CHART_TYPE.COLUMN_CLUSTERED,
+            Inches(1), Inches(1.5), Inches(8), Inches(5),
+            chart_data,
+        )
 
 
 def _add_highlights_risks_slide(prs: Presentation, narrative: dict) -> None:

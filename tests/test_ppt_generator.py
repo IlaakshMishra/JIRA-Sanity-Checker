@@ -64,3 +64,16 @@ def test_build_next_steps_slide_has_carryover_keys():
     text = _all_text(prs.slides[4])
     assert "Unblock ENG-9 with DBA" in text
     assert "ENG-1" in text
+
+
+def test_build_handles_empty_status_counts():
+    from ppt_generator import build
+
+    stats = dict(SAMPLE_STATS)
+    stats["status_counts"] = {}
+
+    result = build("Sprint 42", stats, SAMPLE_NARRATIVE)
+    prs = Presentation(io.BytesIO(result))
+
+    assert len(prs.slides) == 5
+    assert "No status data available." in _all_text(prs.slides[2])
